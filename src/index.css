@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-float {
+  animation: floatGentle 3s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+/* Printing styles for browser native print dialog */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+  
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Hide everything except the print document */
+  header, nav, aside, footer, .print\:hidden,
+  button, input, select, textarea {
+    display: none !important;
+  }
+
+  /* Hide non-print containers */
+  body > #root > div > header,
+  body > #root > div > main > div:first-child,
+  body > #root > div > main > div > div.lg\:col-span-5 {
+    display: none !important;
+  }
+
+  /* Normal RPP printing behavior when NOT printing token cards */
+  body:not(.printing-token-cards-active) #official-rpp-document {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Token Card Print Sheet Mode: Hide modal dialog wrapper, show token cards only */
+  body.printing-token-cards-active #official-rpp-document,
+  body.printing-token-cards-active header,
+  body.printing-token-cards-active nav,
+  body.printing-token-cards-active aside,
+  body.printing-token-cards-active footer,
+  body.printing-token-cards-active .token-card-modal-chrome {
+    display: none !important;
+  }
+
+  body.printing-token-cards-active,
+  body.printing-token-cards-active #root {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  body.printing-token-cards-active #token-card-print-container {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.printing-token-cards-active .token-print-sheet {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  body.printing-token-cards-active .token-print-sheet:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .print-page, .pdf-page {
+    display: block !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .print-page:last-child, .pdf-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  table, tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
+
+/* PDF Export styles to ensure exact standard A4 rendering */
+.pdf-export-mode {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+  border-color: #0f172a !important;
+}
+
+.pdf-export-mode .print\:hidden {
+  display: none !important;
+}
+
+.pdf-export-mode .print\:shadow-none {
+  box-shadow: none !important;
+}
+
+.pdf-export-mode table,
+.pdf-export-mode tr,
+.pdf-export-mode td,
+.pdf-export-mode th {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}

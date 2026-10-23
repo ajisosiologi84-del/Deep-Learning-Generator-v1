@@ -1,0 +1,6 @@
+{
+  "name": "Perancang RPP Deep Learning Kurikulum Merdeka",
+  "description": "Penyusun RPP Pembelajaran Mendalam (Deep Learning) Kurikulum Merdeka BSKAP berkesadaran (mindful), bermakna (meaningful), dan menggembirakan (joyful) dengan alur M3.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
