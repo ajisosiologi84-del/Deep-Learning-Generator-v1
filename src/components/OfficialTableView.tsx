@@ -6,7 +6,6 @@ import {
   RefleksiGuruData,
   DiferensiasiPembelajaran,
   BahanAjarData,
-  InstrumenAsesmenData,
   WaktuAlurM3,
 } from '../types/rpp';
 import { DPL_LIST } from '../data/dplData';
@@ -81,45 +80,6 @@ export const getDefaultBahanAjar = (rpp: RPPData): BahanAjarData => {
       `Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi. (2024). Buku Panduan Guru & Siswa: ${rpp.identitas.mapel} ${rpp.identitas.kelas}. Jakarta: Pusat Perbukuan.`,
       'Fullan, M., Quinn, J., & McEachen, J. (2018). Deep Learning: Engage the World Change the World. Corwin Press.',
     ],
-  };
-};
-
-export const getDefaultInstrumenAsesmen = (rpp: RPPData): InstrumenAsesmenData => {
-  if (rpp.instrumenAsesmen) return rpp.instrumenAsesmen;
-  return {
-    soalDiagnostikAwal: [
-      {
-        nomor: 1,
-        tipe: 'Diagnostik',
-        pertanyaan: `Pernahkah Anda mengamati atau mengalami langsung fenomena terkait ${rpp.identitas.topik} di lingkungan sekitar Anda? Ceritakan secara singkat pengalaman atau pengamatan Anda.`,
-        kunciJawaban: 'Jawaban terbuka berbasis pengalaman autentik murid. Dinilai berdasarkan kepekaan konteks dan kesadaran awal.',
-        pedomanSkor: 'Skor 1-4 berdasarkan kejelasan deskripsi dan relevansi fenomena.',
-      },
-      {
-        nomor: 2,
-        tipe: 'Diagnostik',
-        pertanyaan: `Menurut pemahaman Anda saat ini, mengapa topik ${rpp.identitas.topik} penting untuk dipelajari dan bagaimana dampaknya bagi kehidupan sehari-hari?`,
-        kunciJawaban: 'Jawaban mencerminkan penalaran logis mengenai fungsi dan manfaat konsep dalam kehidupan nyata.',
-        pedomanSkor: 'Skor 1-4 berdasarkan argumen logis dan kebermaknaan.',
-      },
-    ],
-    soalFormatifSumatifHOTS: [
-      {
-        nomor: 1,
-        tipe: 'Formatif',
-        pertanyaan: `Analisis keterkaitan antara prinsip utama ${rpp.identitas.topik} dengan salah satu tantangan atau masalah nyata yang terjadi di daerah tempat tinggal Anda!`,
-        kunciJawaban: 'Peserta didik mengidentifikasi masalah nyata, mengaitkannya dengan 2-3 konsep materi, dan menyajikan argumen kausalitas yang valid.',
-        pedomanSkor: 'Rubrik 4 Skala: Baru Memulai (1), Berkembang (2), Cakap (3), Sangat Berkembang (4).',
-      },
-      {
-        nomor: 2,
-        tipe: 'Sumatif',
-        pertanyaan: `Rancanglah sebuah solusi orisinal atau produk karya kreatif yang dapat membantu mengatasi tantangan terkait ${rpp.identitas.topik}! Jelaskan langkah konkret implementasinya!`,
-        kunciJawaban: 'Rancangan memuat ide inovatif, kelayakan implementasi, kolaborasi tim, dan estimasi dampak positif bagi lingkungan sekitar.',
-        pedomanSkor: 'Rubrik 4 Skala: Orisinalitas (25%), Kelayakan (25%), Kedalaman Analisis (25%), Kejelasan Paparan (25%).',
-      },
-    ],
-    pedomanPenskoran: 'Skor Akhir = (Total Skor Perolehan / Total Skor Maksimal) x 100. Kriteria Ketercapaian Tujuan Pembelajaran (KKTP): Minimal predikat "Cakap" (Skor >= 75).',
   };
 };
 
@@ -359,7 +319,6 @@ export const OfficialTableView: React.FC<OfficialTableViewProps> = ({
   const refleksiMuridData = getDefaultRefleksiMurid(rpp);
   const refleksiGuruData = getDefaultRefleksiGuru(rpp);
   const bahanAjarData = getDefaultBahanAjar(rpp);
-  const instrumenData = getDefaultInstrumenAsesmen(rpp);
   const waktuM3 = getDefaultWaktuM3(rpp);
   const p3List = rpp.dimensiP3 && rpp.dimensiP3.length > 0 ? rpp.dimensiP3 : mapDplToP3(rpp.dplTerpilih?.map((d) => d.id) || []);
 

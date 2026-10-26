@@ -28,6 +28,7 @@ import {
   Loader2,
   ExternalLink,
   CheckCircle2,
+  Search,
 } from 'lucide-react';
 import { AppToken } from '../types/token';
 import { downloadTokenCardsAsPDF } from '../utils/exportUtils';
@@ -71,6 +72,8 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
 
   // Token Selection State
   const [selectedTokenIds, setSelectedTokenIds] = useState<string[]>([]);
+  const [tokenSearch, setTokenSearch] = useState<string>('');
+  const [customSelectCount, setCustomSelectCount] = useState<number>(125);
   const [activePreviewPage, setActivePreviewPage] = useState<number>(1);
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
   const [isGeneratingQr, setIsGeneratingQr] = useState<boolean>(false);
@@ -97,7 +100,7 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
     }
   }, [isOpen, preSelectedTokenId, tokens]);
 
-  // Generate QR codes for all selected tokens
+  // Generate QR codes for all selected tokens in fast parallel batches
   useEffect(() => {
     if (!isOpen || !showQrCode) return;
 
@@ -107,25 +110,32 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
     const generateQrs = async () => {
       const urls: Record<string, string> = {};
       const baseAppUrl = appUrl.trim() || 'https://dmgenerator.vercel.app';
+      const targetTokens = tokens.filter((t) => selectedTokenIds.includes(t.id));
+      const darkColor = theme === 'kemdikbud' ? '#064e3b' : theme === 'sapphire' ? '#1e3a8a' : theme === 'purple' ? '#581c87' : '#0f172a';
 
-      for (const token of tokens) {
-        if (selectedTokenIds.includes(token.id)) {
-          try {
-            const targetUrl = `${baseAppUrl.replace(/\/+$/, '')}?token=${encodeURIComponent(token.token)}`;
-            const qrDataUrl = await QRCode.toDataURL(targetUrl, {
-              width: 180,
-              margin: 1,
-              color: {
-                dark: theme === 'kemdikbud' ? '#064e3b' : theme === 'sapphire' ? '#1e3a8a' : theme === 'purple' ? '#581c87' : '#0f172a',
-                light: '#ffffff',
-              },
-              errorCorrectionLevel: 'M',
-            });
-            urls[token.id] = qrDataUrl;
-          } catch (err) {
-            console.warn('QR code gen failed for token:', token.token, err);
-          }
-        }
+      // Process in parallel batches of 20 for rapid high-count rendering
+      for (let i = 0; i < targetTokens.length; i += 20) {
+        if (!isMounted) break;
+        const slice = targetTokens.slice(i, i + 20);
+        await Promise.all(
+          slice.map(async (token) => {
+            try {
+              const targetUrl = `${baseAppUrl.replace(/\/+$/, '')}?token=${encodeURIComponent(token.token)}`;
+              const qrDataUrl = await QRCode.toDataURL(targetUrl, {
+                width: 180,
+                margin: 1,
+                color: {
+                  dark: darkColor,
+                  light: '#ffffff',
+                },
+                errorCorrectionLevel: 'M',
+              });
+              urls[token.id] = qrDataUrl;
+            } catch (err) {
+              console.warn('QR code gen failed for token:', token.token, err);
+            }
+          })
+        );
       }
 
       if (isMounted) {
@@ -165,6 +175,12 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
     setSelectedTokenIds(tokens.filter((t) => t.isActive).map((t) => t.id));
   };
 
+  const handleSelectFirstN = (count: number) => {
+    const target = Math.max(1, Math.min(count, tokens.length));
+    setSelectedTokenIds(tokens.slice(0, target).map((t) => t.id));
+    setActivePreviewPage(1);
+  };
+
   const handleDeselectAll = () => {
     setSelectedTokenIds([]);
   };
@@ -174,6 +190,18 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
+
+  // Filtered tokens in checklist based on search query
+  const displayedTokensInChecklist = useMemo(() => {
+    if (!tokenSearch.trim()) return tokens;
+    const q = tokenSearch.toLowerCase();
+    return tokens.filter(
+      (t) =>
+        t.token.toLowerCase().includes(q) ||
+        (t.label && t.label.toLowerCase().includes(q)) ||
+        (t.schoolName && t.schoolName.toLowerCase().includes(q))
+    );
+  }, [tokens, tokenSearch]);
 
   // 1. Direct PDF Export (Works 100% reliably in any environment)
   const handleDownloadPdf = async () => {
@@ -915,8 +943,29 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>5. Pilih Token Dicetak ({selectedTokenIds.length}/{tokens.length})</span>
+                  <span>5. Pilih Token Dicetak ({selectedTokenIds.length} dari {tokens.length} Kartu)</span>
                 </label>
+              </div>
+
+              {/* Search Filter Input */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={tokenSearch}
+                  onChange={(e) => setTokenSearch(e.target.value)}
+                  placeholder="Cari kode token, nama guru, atau sekolah..."
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+                {tokenSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setTokenSearch('')}
+                    className="absolute right-2 top-2 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
 
               {/* Quick Select Buttons */}
@@ -924,65 +973,120 @@ export const TokenCardPrintModal: React.FC<TokenCardPrintModalProps> = ({
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  className="px-2 py-1 text-[11px] font-bold rounded bg-slate-200 hover:bg-slate-300 text-slate-800 transition cursor-pointer"
+                  className="px-2 py-1 text-[10.5px] font-bold rounded bg-slate-200 hover:bg-slate-300 text-slate-800 transition cursor-pointer"
                 >
-                  Pilih Semua
+                  Semua ({tokens.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectFirstN(125)}
+                  className="px-2 py-1 text-[10.5px] font-bold rounded bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition cursor-pointer"
+                  title="Pilih 125 token guru pertama"
+                >
+                  125 Guru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectFirstN(100)}
+                  className="px-2 py-1 text-[10.5px] font-bold rounded bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                >
+                  100 Guru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectFirstN(50)}
+                  className="px-2 py-1 text-[10.5px] font-bold rounded bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                >
+                  50 Guru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectFirstN(25)}
+                  className="px-2 py-1 text-[10.5px] font-bold rounded bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                >
+                  25 Guru
                 </button>
                 <button
                   type="button"
                   onClick={handleSelectActiveOnly}
-                  className="px-2 py-1 text-[11px] font-bold rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition cursor-pointer"
+                  className="px-2 py-1 text-[10.5px] font-bold rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition cursor-pointer"
                 >
-                  Hanya yang Aktif
+                  Aktif Saja
                 </button>
                 <button
                   type="button"
                   onClick={handleDeselectAll}
-                  className="px-2 py-1 text-[11px] font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
+                  className="px-2 py-1 text-[10.5px] font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
                 >
                   Kosongkan
                 </button>
               </div>
 
+              {/* Custom Count Selector */}
+              <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+                <span className="text-[10px] font-bold text-slate-600 shrink-0">Pilih Jumlah Kustom:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={tokens.length || 500}
+                  value={customSelectCount}
+                  onChange={(e) => setCustomSelectCount(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-16 px-1.5 py-0.5 text-xs font-bold text-center bg-white border border-slate-300 rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSelectFirstN(customSelectCount)}
+                  className="px-2 py-0.5 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded transition cursor-pointer shrink-0"
+                >
+                  Pilih {customSelectCount} Pertama
+                </button>
+              </div>
+
               {/* Scrollable Token Checklist */}
               <div className="max-h-56 overflow-y-auto space-y-1.5 border border-slate-200 rounded-xl p-2 bg-slate-50">
-                {tokens.map((t) => {
-                  const isChecked = selectedTokenIds.includes(t.id);
-                  return (
-                    <label
-                      key={t.id}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-xs cursor-pointer transition ${
-                        isChecked
-                          ? 'bg-white border border-emerald-300 shadow-2xs'
-                          : 'bg-transparent hover:bg-white/60 text-slate-500'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleToken(t.id)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5 shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-slate-900 text-[11px]">
-                            {t.token}
-                          </span>
-                          <span
-                            className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
-                              t.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                            }`}
-                          >
-                            {t.isActive ? 'AKTIF' : 'NONAKTIF'}
-                          </span>
+                {displayedTokensInChecklist.length === 0 ? (
+                  <p className="text-center text-xs text-slate-400 py-4">
+                    Tidak ada token yang sesuai pencarian.
+                  </p>
+                ) : (
+                  displayedTokensInChecklist.map((t) => {
+                    const isChecked = selectedTokenIds.includes(t.id);
+                    return (
+                      <label
+                        key={t.id}
+                        className={`flex items-center gap-2 p-2 rounded-lg text-xs cursor-pointer transition ${
+                          isChecked
+                            ? 'bg-white border border-emerald-300 shadow-2xs'
+                            : 'bg-transparent hover:bg-white/60 text-slate-500'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleToken(t.id)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-slate-900 text-[11px]">
+                              {t.token}
+                            </span>
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                                t.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {t.isActive ? 'AKTIF' : 'NONAKTIF'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-600 truncate">
+                            {t.label} {t.schoolName ? `• ${t.schoolName}` : ''}
+                          </p>
                         </div>
-                        <p className="text-[10px] text-slate-600 truncate">
-                          {t.label} {t.schoolName ? `• ${t.schoolName}` : ''}
-                        </p>
-                      </div>
-                    </label>
-                  );
-                })}
+                      </label>
+                    );
+                  })
+                )}
               </div>
             </div>
 

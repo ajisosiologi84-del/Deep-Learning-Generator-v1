@@ -43,6 +43,7 @@ interface RppInputFormProps {
   onSubmit: (state?: RPPInputFormState) => void;
   isLoading: boolean;
   onLoadPreset: (presetId: string) => void;
+  onResetCleanForm?: () => void;
 }
 
 const MINAT_OPTIONS = [
@@ -93,6 +94,7 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
   onSubmit,
   isLoading,
   onLoadPreset,
+  onResetCleanForm,
 }) => {
   const [activeStep, setActiveStep] = useState<'identitas' | 'kurikulum' | 'diferensiasi' | 'profil' | 'kop_ttd'>('identitas');
   const [selectedJenjangFilter, setSelectedJenjangFilter] = useState<'ALL' | 'TK' | 'SD' | 'SMP' | 'SMA' | 'SMK' | 'SLB'>('ALL');
@@ -402,30 +404,69 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden transition-all">
-      {/* Preset Banner */}
-      <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 p-3.5 border-b border-emerald-100/70">
+      {/* App Action Bar */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-3.5 border-b border-slate-700">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <BookmarkCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span className="text-xs font-semibold text-emerald-900">
-              Contoh RPP Standar BSKAP:
-            </span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-500/30">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block leading-tight">
+                Formulir RPP Deep Learning
+              </span>
+              <span className="text-[10.5px] text-slate-300">
+                5 Tahapan Lengkap: Identitas, CP & HOTS, Diferensiasi, Profil, Kop & TTD
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {PRESETS.map((preset) => (
+          <div className="flex items-center gap-2 flex-wrap">
+            {onResetCleanForm && (
               <button
-                key={preset.id}
                 type="button"
-                onClick={() => onLoadPreset(preset.id)}
-                className="text-xs px-2.5 py-1 rounded-md bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs font-medium transition-all hover:border-emerald-400 active:scale-95 inline-flex items-center gap-1.5"
-                title={`${preset.label} (${preset.formInput.kelas})`}
+                onClick={onResetCleanForm}
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/20 font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                title="Kosongkan formulir untuk menyusun RPP baru Anda dari awal"
               >
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/60">
-                  {preset.badge || 'BSKAP'}
-                </span>
-                <span>{preset.formInput.mapel}: {preset.formInput.topik.slice(0, 18)}...</span>
+                <RotateCcw className="w-3 h-3 text-slate-300" />
+                <span>Formulir Bersih</span>
               </button>
-            ))}
+            )}
+            
+            {/* Optional Example Presets Dropdown */}
+            <div className="relative group">
+              <button
+                type="button"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Buka contoh template RPP Kurikulum Merdeka yang siap dicoba"
+              >
+                <BookmarkCheck className="w-3.5 h-3.5" />
+                <span>Muat Contoh (Opsional) ▾</span>
+              </button>
+              <div className="absolute right-0 top-full mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 hidden group-hover:block hover:block animate-fadeIn">
+                <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                  Pilih Contoh Standar BSKAP:
+                </div>
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => onLoadPreset(preset.id)}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 flex flex-col transition cursor-pointer border-b border-slate-50 last:border-none"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900">{preset.formInput.mapel}</span>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded font-semibold bg-emerald-100 text-emerald-800">
+                        {preset.formInput.kelas}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 truncate mt-0.5">
+                      {preset.formInput.topik}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -926,17 +926,56 @@ export const AdminTokenManagerModal: React.FC<AdminTokenManagerModalProps> = ({
                 </p>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Jumlah Token:</label>
-                  <select
-                    value={batchCount}
-                    onChange={(e) => setBatchCount(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold"
-                  >
-                    <option value={5}>Buat 5 Token Sekaligus</option>
-                    <option value={10}>Buat 10 Token Sekaligus</option>
-                    <option value={20}>Buat 20 Token Sekaligus</option>
-                    <option value={30}>Buat 30 Token Sekaligus</option>
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Jumlah Token yang Dibuat:</label>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {batchCount} Token
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={1000}
+                      value={batchCount}
+                      onChange={(e) => setBatchCount(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-black focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      placeholder="Masukkan jumlah (misal: 125)"
+                      required
+                    />
+                  </div>
+
+                  {/* Preset quick buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold text-slate-500">Pilihan Cepat:</span>
+                    {[
+                      { val: 10, label: '10' },
+                      { val: 25, label: '25' },
+                      { val: 50, label: '50' },
+                      { val: 100, label: '100' },
+                      { val: 125, label: '125 (Dewan Guru)' },
+                      { val: 150, label: '150' },
+                      { val: 200, label: '200' },
+                      { val: 500, label: '500' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.val}
+                        type="button"
+                        onClick={() => setBatchCount(preset.val)}
+                        className={`text-[10.5px] px-2 py-1 rounded-lg font-bold border transition cursor-pointer ${
+                          batchCount === preset.val
+                            ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-xs'
+                            : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10.5px] text-slate-500 mt-1.5">
+                    💡 Anda bebas menentukan jumlah token sesuai kebutuhan sekolah (misal: 125 guru) tanpa dibatasi.
+                  </p>
                 </div>
 
                 <div>

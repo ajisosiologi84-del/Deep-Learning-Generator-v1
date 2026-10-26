@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RPPData, RPPInputFormState } from './types/rpp';
 import { PRESETS } from './data/presets';
+import { DEFAULT_LOGO_SEKOLAH, DEFAULT_LOGO_PEMDA } from './data/defaultLogos';
 import { generateRPP } from './services/rppService';
 import { Header } from './components/Header';
 import { RppInputForm } from './components/RppInputForm';
@@ -26,21 +27,163 @@ import {
   Key,
 } from 'lucide-react';
 
-export default function App() {
-  // Initialize with the official example from the uploaded PDF
-  const defaultPreset = PRESETS[0];
+export const createDefaultInputState = (session?: TokenSession | null): RPPInputFormState => ({
+  namaGuru: session?.label && !session.label.startsWith('Voucher') && !session.label.startsWith('Akses Dewan Guru') ? session.label : '',
+  nipGuru: '',
+  satuanPendidikan: session?.schoolName || '',
+  namaDinas: 'DINAS PENDIDIKAN DAN KEBUDAYAAN',
+  alamatSekolah: '',
+  kontakSekolah: '',
+  tampilkanKop: true,
+  logoKiri: DEFAULT_LOGO_SEKOLAH,
+  logoKanan: DEFAULT_LOGO_PEMDA,
+  namaKepalaSekolah: '',
+  nipKepalaSekolah: '',
+  tempatPenetapan: '',
+  tanggalPenetapan: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+  kelas: 'Fase D (Kelas 7 SMP)',
+  fase: 'Fase D',
+  semester: 'Ganjil',
+  mapel: '',
+  topik: '',
+  alokasiWaktu: '2 x 45 Menit (1 Pertemuan)',
+  minat: '',
+  caraBelajar: '',
+  lingkungan: '',
+  selectedDpl: [3, 4, 5],
+  capaianPembelajaran: '',
+  elemenCP: '',
+  pemahamanBermakna: '',
+  pertanyaanPemantik: '',
+  diferensiasiKonten: '',
+  diferensiasiProses: '',
+  diferensiasiProduk: '',
+  saranaPrasarana: '',
+});
 
-  const [inputState, setInputState] = useState<RPPInputFormState>(defaultPreset.formInput);
-  const [rppData, setRppData] = useState<RPPData>(defaultPreset.rppData);
+export const createDefaultRPPData = (input: RPPInputFormState): RPPData => ({
+  identitas: {
+    nama: input.namaGuru || 'Guru Pengampu',
+    kelas: input.kelas || 'Fase D (Kelas 7 SMP)',
+    fase: input.fase || 'Fase D',
+    semester: input.semester || 'Ganjil',
+    mapel: input.mapel || 'Mata Pelajaran',
+    topik: input.topik || 'Topik Pembelajaran',
+    alokasiWaktu: input.alokasiWaktu || '2 x 45 Menit',
+    satuanPendidikan: input.satuanPendidikan || 'Satuan Pendidikan',
+  },
+  kopSekolah: {
+    tampilkanKop: input.tampilkanKop ?? true,
+    namaDinas: input.namaDinas || 'DINAS PENDIDIKAN DAN KEBUDAYAAN',
+    namaSekolah: input.satuanPendidikan || 'SEKOLAH PENGGERAK',
+    alamatSekolah: input.alamatSekolah || '',
+    kontakSekolah: input.kontakSekolah || '',
+    logoKiri: input.logoKiri || DEFAULT_LOGO_SEKOLAH,
+    logoKanan: input.logoKanan || DEFAULT_LOGO_PEMDA,
+  },
+  pengesahan: {
+    tempatPenetapan: input.tempatPenetapan || 'Ditetapkan',
+    tanggalPenetapan: input.tanggalPenetapan || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+    namaKepalaSekolah: input.namaKepalaSekolah || 'Kepala Sekolah, M.Pd.',
+    nipKepalaSekolah: input.nipKepalaSekolah || '-',
+    namaGuru: input.namaGuru || 'Guru Pengampu',
+    nipGuru: input.nipGuru || '-',
+  },
+  profilMurid: {
+    minat: input.minat || 'Eksplorasi kontekstual, media digital, dan diskusi kelompok',
+    caraBelajar: input.caraBelajar || 'Visual, kinestetik, dan kolaborasi',
+    lingkungan: input.lingkungan || 'Lingkungan masyarakat sekolah dan sekitarnya',
+  },
+  dplTerpilih: [
+    { id: 3, nama: 'Penalaran Kritis', alasan: 'Menganalisis sebab-akibat secara mendalam.' },
+    { id: 4, nama: 'Kreativitas', alasan: 'Menghasilkan inovasi karya yang kontekstual.' },
+    { id: 5, nama: 'Kolaborasi', alasan: 'Bekerja sama dalam kelompok heterogen secara inklusif.' },
+  ],
+  capaianPembelajaran: input.capaianPembelajaran || '',
+  elemenCP: input.elemenCP || '',
+  pemahamanBermakna: input.pemahamanBermakna || '',
+  pertanyaanPemantik: input.pertanyaanPemantik ? input.pertanyaanPemantik.split('\n').filter(Boolean) : [],
+  diferensiasiPembelajaran: {
+    konten: input.diferensiasiKonten || 'Bahan ajar multi-modal (teks, visual, audio) disesuaikan dengan profil dan kesiapan belajar murid.',
+    proses: input.diferensiasiProses || 'Scaffolding bertingkat: pendampingan intensif bagi murid yang baru memulai dan tantangan mandiri bagi yang cakap.',
+    produk: input.diferensiasiProduk || 'Kebebasan memilih bentuk unjuk kerja kontekstual (infografis, rekaman narasi, unjuk karya fisik).',
+  },
+  saranaPrasarana: input.saranaPrasarana || 'Media ajar multi-modal, perangkat TIK, lembar kerja inkuiri, dan sumber belajar autentik.',
+  desainPembelajaran: {
+    tujuanPembelajaran: 'Peserta didik mampu memahami konsep esensial dan mengaplikasikannya dalam memecahkan masalah kontekstual secara berkesadaran.',
+    praktikPedagogis: 'Model pembelajaran berbasis masalah (PBL) dan berbasis proyek kontekstual (PjBL) yang mengintegrasikan alur M3.',
+    kemitraanPembelajaran: 'Melibatkan rekan sejawat, lingkungan keluarga, dan komunitas sekolah sebagai sumber belajar autentik.',
+    lingkunganPembelajaran: 'Pengaturan kelas dinamis, aman secara psikologis, menghargai keberagaman, dan mendorong rasa ingin tahu.',
+    pemanfaatanDigital: 'Aplikasi presentasi, media audio-visual interaktif, dan lembar kolaborasi digital.',
+  },
+  pengalamanBelajar: {
+    memahami: {
+      judul: 'Memahami (Mindful)',
+      langkahLangkah: [
+        'Guru menghadirkan stimulus kontekstual yang memantik perhatian dan kesadaran berkesadaran murid.',
+        'Murid mengeksplorasi pertanyaan pemantik dan mendiskusikan konsep kunci dalam kelompok kecil.',
+        'Guru bersama murid menyimpulkan esensi pemahaman konsep dasar dan mengonfirmasi pemahaman.',
+      ],
+    },
+    mengaplikasikan: {
+      judul: 'Mengaplikasikan (Meaningful, Joyful)',
+      langkahLangkah: [
+        'Murid melakukan investigasi dan menghubungkan materi dengan tantangan riil di lingkungan sekitar.',
+        'Kelompok merancang karya atau solusi nyata secara kolaboratif dalam suasana menyenangkan.',
+        'Gelar karya / unjuk kerja: Setiap tim memamerkan hasil karya dan menerima umpan balik apresiatif.',
+      ],
+    },
+    merefleksikan: {
+      judul: 'Merefleksikan (Mindful, Meaningful)',
+      pertanyaanRefleksi: [
+        'Apa hal paling berharga dan bermakna yang kalian pelajari hari ini?',
+        'Bagaimana pembelajaran ini mengubah cara pandang kalian terhadap situasi di sekitar?',
+        'Aksi konkret apa yang akan kalian lakukan setelah memahami konsep ini?',
+      ],
+      aktivitasRefleksi: 'Murid menuliskan refleksi metakognisi pada lembar refleksi diri secara hening dan berkesadaran.',
+    },
+  },
+  asesmen: {
+    awal: 'Assessment of Learning (Awal): Pemetaan diagnostik kesiapan dan apersepsi kontekstual.',
+    proses: 'Assessment as Learning (Proses): Lembar observasi keterlibatan, self-assessment, dan peer-feedback.',
+    akhir: 'Assessment for Learning (Akhir): Asesmen unjuk karya kontekstual dan presentasi solusi tim.',
+  },
+  rubrikPenilaian: [
+    {
+      kriteria: '1. Penguasaan Konsep Esensial',
+      baruMemulai: 'Mampu mengenali konsep dasar dengan bimbingan penuh fasilitator.',
+      berkembang: 'Mampu menjelaskan konsep pokok namun belum konsisten mengaitkannya dengan konteks.',
+      cakap: 'Mampu menguraikan konsep secara mandiri dan mengaitkannya dengan situasi nyata secara logis.',
+      sangatBerkembang: 'Mampu menganalisis secara kritis, menghubungkan lintas konsep, dan merumuskan wawasan baru.',
+    },
+    {
+      kriteria: '2. Penalaran Kritis & Pemecahan Masalah',
+      baruMemulai: 'Mengikuti alur pemecahan masalah dengan instruksi langsung.',
+      berkembang: 'Mulai mengidentifikasi alternatif solusi dengan pendampingan bertahap.',
+      cakap: 'Mampu merumuskan argumen kausalitas dan solusi yang aplikatif secara mandiri.',
+      sangatBerkembang: 'Menunjukkan analisis mendalam, orisinalitas tinggi, dan solusi bernilai manfaat nyata.',
+    },
+    {
+      kriteria: '3. Kolaborasi & Komunikasi Berkesadaran',
+      baruMemulai: 'Berpartisipasi pasif dalam diskusi kelompok.',
+      berkembang: 'Aktif menyampaikan gagasan dan mulai menghargai sudut pandang anggota lain.',
+      cakap: 'Berkontribusi nyata, mendengarkan secara aktif, dan menyatukan perbedaan ide dalam tim.',
+      sangatBerkembang: 'Menunjukkan kepemimpinan empatik, menginspirasi kerja sama inklusif, dan mengomunikasikan ide persuasif.',
+    },
+  ],
+});
+
+export default function App() {
+  const [activeSession, setActiveSession] = useState<TokenSession | null>(() => tokenService.getActiveSession());
+  const [hasGenerated, setHasGenerated] = useState<boolean>(false);
+  const [inputState, setInputState] = useState<RPPInputFormState>(() => createDefaultInputState(tokenService.getActiveSession()));
+  const [rppData, setRppData] = useState<RPPData>(() => createDefaultRPPData(createDefaultInputState(tokenService.getActiveSession())));
   const [activeTab, setActiveTab] = useState<'official' | 'interactive' | 'gemini' | 'markdown'>('official');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isGenerationComplete, setIsGenerationComplete] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [guideModalOpen, setGuideModalOpen] = useState<boolean>(false);
-
-  // Token Auth & Admin State
-  const [activeSession, setActiveSession] = useState<TokenSession | null>(() => tokenService.getActiveSession());
   const [adminConfig, setAdminConfig] = useState<AdminConfig>(() => tokenService.getAdminConfig());
   const [loginModalOpen, setLoginModalOpen] = useState<boolean>(false);
   const [adminModalOpen, setAdminModalOpen] = useState<boolean>(false);
@@ -179,6 +322,7 @@ export default function App() {
           details: `Penyusunan RPP Deep Learning: "${enriched.identitas.topik}" [Alokasi: ${enriched.identitas.alokasiWaktu || '-'}]`,
           status: 'SUCCESS',
         });
+        setHasGenerated(true);
       }
       setIsGenerationComplete(true);
     } catch (err) {
@@ -187,11 +331,19 @@ export default function App() {
     }
   };
 
+  const handleResetCleanForm = () => {
+    const clean = createDefaultInputState(activeSession);
+    setInputState(clean);
+    setRppData(createDefaultRPPData(clean));
+    setHasGenerated(false);
+  };
+
   const handleLoadPreset = (presetId: string) => {
     const found = PRESETS.find((p) => p.id === presetId);
     if (found) {
       setInputState(found.formInput);
       setRppData(found.rppData);
+      setHasGenerated(true);
     }
   };
 
@@ -220,7 +372,7 @@ export default function App() {
         onOpenOnboarding={() => setOnboardingModalOpen(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        hasGenerated={true}
+        hasGenerated={hasGenerated}
         activeSession={activeSession}
         onOpenAdminToken={() => {
           if (activeSession?.isAdmin) {
@@ -285,12 +437,37 @@ export default function App() {
                 onSubmit={handleGenerate}
                 isLoading={isLoading}
                 onLoadPreset={handleLoadPreset}
+                onResetCleanForm={handleResetCleanForm}
               />
             </div>
           )}
 
           {/* Right Column: Output Viewer */}
           <div className={`${isSidebarOpen ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4 transition-all`}>
+            
+            {/* Guide banner when starting fresh */}
+            {!hasGenerated && (
+              <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-slate-900 text-white p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden animate-fadeIn">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-white/20 rounded-md text-[10px] font-black uppercase tracking-wider text-emerald-200">
+                      Aplikasi Siap Digunakan
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-bold">Formulir RPP Baru Aktif</h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-white/90">
+                    Isi identitas guru, CP & materi Anda di formulir sebelah kiri, lalu klik &quot;Rancang RPP Deep Learning&quot;.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleLoadPreset('gurindam-pesisir')}
+                  className="text-xs px-3 py-1.5 rounded-xl bg-white text-emerald-950 font-bold hover:bg-emerald-50 transition cursor-pointer shadow-xs shrink-0 self-start sm:self-auto"
+                >
+                  Lihat Contoh Dokumen BSKAP
+                </button>
+              </div>
+            )}
             
             {/* Official Table View (Always kept in DOM for PDF export and printing reliability) */}
             <div className={activeTab === 'official' ? 'block' : 'fixed -left-[9999px] top-0 pointer-events-none w-[794px]'}>

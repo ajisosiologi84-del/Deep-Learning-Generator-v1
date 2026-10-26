@@ -277,26 +277,28 @@ Output Anda HARUS berupa JSON valid tanpa teks pengantar atau penutup. JSON haru
 
 app.post('/api/generate-rpp', async (req, res) => {
   const {
-    namaGuru = 'Guru Penggerak, S.Pd.',
+    namaGuru = 'Guru Pengampu, S.Pd.',
     nipGuru = '-',
-    kelas = 'XI',
-    fase = 'Fase F',
-    mapel = 'Bahasa Indonesia',
-    topik = 'Karya Sastra Gurindam',
-    minat = 'Musik, sosial media, game',
-    caraBelajar = 'Visual, diskusi',
-    lingkungan = 'Pesisir utara, nelayan, dan buruh',
+    kelas = 'Fase D (Kelas 7 SMP)',
+    fase = 'Fase D',
+    mapel = 'Mata Pelajaran',
+    topik = 'Materi Pembelajaran Mendalam',
+    minat = 'Media digital, eksplorasi lingkungan, dan diskusi kelompok',
+    caraBelajar = 'Visual, kinestetik, dan kolaborasi',
+    lingkungan = 'Lingkungan sekolah dan masyarakat sekitar',
     alokasiWaktu = '2 x 45 Menit (1 Pertemuan)',
     selectedDpl = [3, 4, 5],
-    satuanPendidikan = 'SMA Negeri 1 Pesisir Bahari',
-    namaDinas = 'PEMERINTAH PROVINSI / DINAS PENDIDIKAN',
+    satuanPendidikan = 'Satuan Pendidikan',
+    namaDinas = 'DINAS PENDIDIKAN DAN KEBUDAYAAN',
     alamatSekolah = 'Jl. Pendidikan No. 1',
-    kontakSekolah = 'Telp. (021) 123456 • info@sekolah.sch.id',
+    kontakSekolah = 'info@sekolah.sch.id',
     tampilkanKop = true,
+    logoKiri = '',
+    logoKanan = '',
     namaKepalaSekolah = 'Kepala Sekolah, M.Pd.',
-    nipKepalaSekolah = '19750101 200003 1 001',
-    tempatPenetapan = 'Pesisir Bahari',
-    tanggalPenetapan = '15 Juli 2024',
+    nipKepalaSekolah = '-',
+    tempatPenetapan = 'Kota',
+    tanggalPenetapan = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
     capaianPembelajaran = '',
     elemenCP = '',
     pemahamanBermakna = '',
@@ -479,6 +481,8 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
           namaSekolah: satuanPendidikan,
           alamatSekolah,
           kontakSekolah,
+          logoKiri,
+          logoKanan,
         };
         parsed.pengesahan = {
           tempatPenetapan,
@@ -488,6 +492,17 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
           namaGuru,
           nipGuru,
         };
+        if (capaianPembelajaran && !parsed.capaianPembelajaran) parsed.capaianPembelajaran = capaianPembelajaran;
+        if (elemenCP && !parsed.elemenCP) parsed.elemenCP = elemenCP;
+        if (pemahamanBermakna && !parsed.pemahamanBermakna) parsed.pemahamanBermakna = pemahamanBermakna;
+        if (diferensiasiKonten || diferensiasiProses || diferensiasiProduk) {
+          parsed.diferensiasiPembelajaran = {
+            konten: diferensiasiKonten || parsed.diferensiasiPembelajaran?.konten,
+            proses: diferensiasiProses || parsed.diferensiasiPembelajaran?.proses,
+            produk: diferensiasiProduk || parsed.diferensiasiPembelajaran?.produk,
+          };
+        }
+        if (saranaPrasarana && !parsed.saranaPrasarana) parsed.saranaPrasarana = saranaPrasarana;
         return res.json({ success: true, data: parsed, source: 'gemini' });
       } catch (err) {
         // extract json block if wrapped in markdown
@@ -500,6 +515,8 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
             namaSekolah: satuanPendidikan,
             alamatSekolah,
             kontakSekolah,
+            logoKiri,
+            logoKanan,
           };
           parsed.pengesahan = {
             tempatPenetapan,
@@ -509,6 +526,17 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
             namaGuru,
             nipGuru,
           };
+          if (capaianPembelajaran && !parsed.capaianPembelajaran) parsed.capaianPembelajaran = capaianPembelajaran;
+          if (elemenCP && !parsed.elemenCP) parsed.elemenCP = elemenCP;
+          if (pemahamanBermakna && !parsed.pemahamanBermakna) parsed.pemahamanBermakna = pemahamanBermakna;
+          if (diferensiasiKonten || diferensiasiProses || diferensiasiProduk) {
+            parsed.diferensiasiPembelajaran = {
+              konten: diferensiasiKonten || parsed.diferensiasiPembelajaran?.konten,
+              proses: diferensiasiProses || parsed.diferensiasiPembelajaran?.proses,
+              produk: diferensiasiProduk || parsed.diferensiasiPembelajaran?.produk,
+            };
+          }
+          if (saranaPrasarana && !parsed.saranaPrasarana) parsed.saranaPrasarana = saranaPrasarana;
           return res.json({ success: true, data: parsed, source: 'gemini' });
         }
       }
@@ -522,6 +550,7 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
     namaGuru,
     nipGuru,
     kelas,
+    fase,
     mapel,
     topik,
     minat,
@@ -534,10 +563,20 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
     alamatSekolah,
     kontakSekolah,
     tampilkanKop,
+    logoKiri,
+    logoKanan,
     namaKepalaSekolah,
     nipKepalaSekolah,
     tempatPenetapan,
     tanggalPenetapan,
+    capaianPembelajaran,
+    elemenCP,
+    pemahamanBermakna,
+    pertanyaanPemantik,
+    diferensiasiKonten,
+    diferensiasiProses,
+    diferensiasiProduk,
+    saranaPrasarana,
   });
 
   return res.json({ success: true, data: fallbackData, source: 'fallback' });
@@ -729,6 +768,7 @@ function generateFallbackRPP(params: {
   namaGuru: string;
   nipGuru?: string;
   kelas: string;
+  fase?: string;
   mapel: string;
   topik: string;
   minat: string;
@@ -741,10 +781,20 @@ function generateFallbackRPP(params: {
   alamatSekolah?: string;
   kontakSekolah?: string;
   tampilkanKop?: boolean;
+  logoKiri?: string;
+  logoKanan?: string;
   namaKepalaSekolah?: string;
   nipKepalaSekolah?: string;
   tempatPenetapan?: string;
   tanggalPenetapan?: string;
+  capaianPembelajaran?: string;
+  elemenCP?: string;
+  pemahamanBermakna?: string;
+  pertanyaanPemantik?: string | string[];
+  diferensiasiKonten?: string;
+  diferensiasiProses?: string;
+  diferensiasiProduk?: string;
+  saranaPrasarana?: string;
 }) {
   const DPL_MAP: Record<number, { nama: string; defaultAlasan: string }> = {
     1: { nama: 'Keimanan dan Ketakwaan terhadap Tuhan YME', defaultAlasan: 'Menghubungkan rasa syukur atas ciptaan dan keteraturan alam/sosial.' },
@@ -763,10 +813,22 @@ function generateFallbackRPP(params: {
     alasan: DPL_MAP[id]?.defaultAlasan || 'Mendukung kompetensi esensial materi.',
   }));
 
+  const parsedPemantik = Array.isArray(params.pertanyaanPemantik)
+    ? params.pertanyaanPemantik
+    : params.pertanyaanPemantik
+    ? params.pertanyaanPemantik.split('\n').filter(Boolean)
+    : [
+        `Mengapa pemahaman tentang ${params.topik} sangat penting dalam menyikapi persoalan di lingkungan sekitar kita?`,
+        `Bagaimana keterkaitan konsep materi ini dengan fenomena nyata yang dihadapi peserta didik dalam kehidupan sehari-hari?`,
+        `Karya atau aksi nyata apa yang dapat tim Anda ciptakan untuk memberikan dampak positif berkelanjutan?`,
+      ];
+
   return {
     identitas: {
       nama: params.namaGuru,
       kelas: params.kelas,
+      fase: params.fase || 'Fase D',
+      semester: 'Ganjil',
       mapel: params.mapel,
       topik: params.topik,
       alokasiWaktu: params.alokasiWaktu,
@@ -778,10 +840,12 @@ function generateFallbackRPP(params: {
       namaSekolah: params.satuanPendidikan || 'SEKOLAH PENGGERAK',
       alamatSekolah: params.alamatSekolah || 'Jl. Pendidikan Nasional No. 1',
       kontakSekolah: params.kontakSekolah || 'Telp: (021) 1234567 • Pos-el: info@sekolah.sch.id',
+      logoKiri: params.logoKiri,
+      logoKanan: params.logoKanan,
     },
     pengesahan: {
       tempatPenetapan: params.tempatPenetapan || 'Kota',
-      tanggalPenetapan: params.tanggalPenetapan || '15 Juli 2024',
+      tanggalPenetapan: params.tanggalPenetapan || new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
       namaKepalaSekolah: params.namaKepalaSekolah || 'Drs. H. Bambang Sudiro, M.Pd.',
       nipKepalaSekolah: params.nipKepalaSekolah || '19720412 199802 1 004',
       namaGuru: params.namaGuru,
@@ -793,6 +857,16 @@ function generateFallbackRPP(params: {
       lingkungan: params.lingkungan,
     },
     dplTerpilih: dplList,
+    capaianPembelajaran: params.capaianPembelajaran || `Peserta didik mampu memahami dan menerapkan konsep ${params.topik} untuk memecahkan persoalan nyata secara berkesadaran dan mandiri.`,
+    elemenCP: params.elemenCP || 'Pemahaman Konsep & Penalaran Kritis',
+    pemahamanBermakna: params.pemahamanBermakna || `Pemahaman mendalam tentang ${params.topik} menjadi bekal penting dalam bernalar kritis dan menghasilkan karya solusi di lingkungan sekitar.`,
+    pertanyaanPemantik: parsedPemantik,
+    diferensiasiPembelajaran: {
+      konten: params.diferensiasiKonten || `Bahan ajar multi-modal: infografis ringkas, teks bacaan bertingkat, dan studi kasus riil terkait ${params.topik}.`,
+      proses: params.diferensiasiProses || 'Scaffolding bertingkat: pendampingan intensif bagi murid yang baru memulai dan tantangan mandiri bagi yang cakap.',
+      produk: params.diferensiasiProduk || 'Pilihan unjuk karya sesuai minat: poster infografis digital, video/siniar pendek, atau purwarupa visual.',
+    },
+    saranaPrasarana: params.saranaPrasarana || 'Media multi-modal, lembar kerja inkuiri, perangkat TIK, dan lingkungan belajar sekitar.',
     desainPembelajaran: {
       tujuanPembelajaran: `Murid mampu memahami konsep mendalam tentang ${params.topik} dan mengaplikasikannya dalam konteks kehidupan sehari-hari serta isu nyata di lingkungan ${params.lingkungan}.`,
       praktikPedagogis: `Menggunakan pembelajaran berbasis proyek (PjBL) kontekstual dan berbasis masalah (PBL). Murid diajak membuat karya yang mengangkat nilai-nilai esensial materi ${params.topik} dan menghubungkannya dengan realitas kehidupan di lingkungan ${params.lingkungan}. Produk disesuaikan dengan minat murid (${params.minat}), seperti: poster visual/infografis digital, konten video pendek/reels, atau karya analogi kreatif.`,

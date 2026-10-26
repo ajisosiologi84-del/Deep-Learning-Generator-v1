@@ -151,11 +151,11 @@ export const tokenService = {
   generateRandomTokenString(prefix = 'DL'): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     const year = new Date().getFullYear();
-    return `${prefix}-${year}-${code}`;
+    return `${prefix.trim().toUpperCase() || 'GURU'}-${year}-${code}`;
   },
 
   generateBatchTokens(count: number, prefix = 'GURU', daysValid = 30): AppToken[] {
@@ -164,21 +164,27 @@ export const tokenService = {
       ? new Date(Date.now() + daysValid * 24 * 60 * 60 * 1000).toISOString()
       : null;
 
-    for (let i = 1; i <= count; i++) {
+    const targetCount = Math.max(1, Math.min(count, 1000));
+    let attempts = 0;
+    let itemIndex = 1;
+
+    while (created.length < targetCount && attempts < targetCount * 5) {
+      attempts++;
       const code = this.generateRandomTokenString(prefix);
       try {
         const token = this.createToken({
           token: code,
-          label: `Voucher Guru #${i} (${daysValid > 0 ? `${daysValid} Hari` : 'Aktif Penuh'})`,
+          label: `Akses Dewan Guru #${itemIndex} (${daysValid > 0 ? `${daysValid} Hari` : 'Aktif Penuh'})`,
           schoolName: 'Sekolah Penggerak',
           role: 'guru',
           maxUses: -1,
           expiresAt,
-          notes: 'Digenerate secara massal oleh Administrator',
+          notes: `Batch generator (${targetCount} guru) oleh Administrator`,
         });
         created.push(token);
+        itemIndex++;
       } catch {
-        // If collision, continue
+        // Collision: loop again with new random code
       }
     }
     return created;
