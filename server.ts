@@ -19,12 +19,48 @@ app.use(express.json({ limit: '10mb' }));
 const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
+async function callGeminiWithFallback(options: {
+  contents: any;
+  config?: any;
+  timeoutMs?: number;
+}): Promise<any> {
+  if (!ai) throw new Error('AI not configured');
+  const timeoutMs = options.timeoutMs || 9000;
+
+  const tryModel = async (model: string) => {
+    let timer: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Model ${model} timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+    try {
+      const res = await Promise.race([
+        ai.models.generateContent({
+          model,
+          contents: options.contents,
+          config: options.config,
+        }),
+        timeoutPromise,
+      ]);
+      return res as any;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  try {
+    return await tryModel('gemini-2.5-flash');
+  } catch (err: any) {
+    console.warn('gemini-2.5-flash failed or timed out, trying gemini-2.5-flash-lite:', err?.message);
+    return await tryModel('gemini-2.5-flash-lite');
+  }
+}
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     hasApiKey: !!apiKey,
-    model: 'gemini-3.8-flash',
+    model: 'gemini-2.5-flash',
   });
 });
 
@@ -462,14 +498,14 @@ Berikan respon HANYA dalam format JSON valid dengan schema persis seperti ini:
 
   if (ai) {
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const response = await callGeminiWithFallback({
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
           responseMimeType: 'application/json',
           temperature: 0.7,
         },
+        timeoutMs: 15000,
       });
 
       const text = response.text || '';
@@ -601,12 +637,12 @@ ${typeof currentContent === 'object' ? JSON.stringify(currentContent, null, 2) :
 
 Kembalikan hasil revisi yang telah disesuaikan dan siap pakai, mempertahankan nuansa Mindful, Meaningful, dan Joyful serta konteks murid.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+    const response = await callGeminiWithFallback({
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
       },
+      timeoutMs: 12000,
     });
 
     return res.json({ success: true, revisedContent: response.text });
@@ -675,14 +711,14 @@ Berikan rekomendasi lengkap dan kembalikan HANYA format JSON valid tanpa kata pe
 
   if (ai) {
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const response = await callGeminiWithFallback({
         contents: prompt,
         config: {
           systemInstruction: 'Anda adalah konsultan perancang Kurikulum Merdeka BSKAP Pembelajaran Mendalam.',
           responseMimeType: 'application/json',
           temperature: 0.7,
         },
+        timeoutMs: 9000,
       });
 
       const text = response.text || '';

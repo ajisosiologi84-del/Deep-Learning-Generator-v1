@@ -16,6 +16,7 @@ import {
   MapPin,
   Clock,
   Compass,
+  Loader2,
 } from 'lucide-react';
 import { CPRecommendationResult } from '../types/rpp';
 import { DPL_LIST } from '../data/dplData';
@@ -27,6 +28,7 @@ interface CPRecommendationModalProps {
   onApplyAll: (rec: CPRecommendationResult) => void;
   onApplySelected: (rec: CPRecommendationResult, selectedFields: Record<string, boolean>) => void;
   source: 'gemini' | 'heuristic';
+  isLoading?: boolean;
 }
 
 export const CPRecommendationModal: React.FC<CPRecommendationModalProps> = ({
@@ -36,6 +38,7 @@ export const CPRecommendationModal: React.FC<CPRecommendationModalProps> = ({
   onApplyAll,
   onApplySelected,
   source,
+  isLoading,
 }) => {
   const [selectedFields, setSelectedFields] = useState<Record<string, boolean>>({
     pemahamanBermakna: true,
@@ -47,7 +50,48 @@ export const CPRecommendationModal: React.FC<CPRecommendationModalProps> = ({
     elemenCP: true,
   });
 
-  if (!isOpen || !recommendation) return null;
+  if (!isOpen) return null;
+
+  if (isLoading && !recommendation) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 sm:p-8 text-center space-y-4 animate-slideInUp">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base sm:text-lg font-black text-slate-800">
+              Menganalisis Taksonomi CP BSKAP...
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+              Sistem sedang mengekstrak Big Idea, merumuskan Pertanyaan Pemantik HOTS, menyelaraskan diferensiasi pembelajaran, dan mengidentifikasi 8 Dimensi Profil Lulusan (DPL).
+            </p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-left space-y-2 text-xs text-emerald-900">
+            <div className="flex items-center gap-2 font-semibold">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Memproses 4 Pilar Pembelajaran Mendalam:</span>
+            </div>
+            <ul className="text-[11px] text-emerald-800 space-y-1 pl-6 list-disc">
+              <li>Pemahaman Bermakna (Big Idea / Enduring Understanding)</li>
+              <li>Pertanyaan Pemantik HOTS (Analisis, Evaluasi, Kreasi)</li>
+              <li>Diferensiasi Pembelajaran (Konten, Proses, Produk) & Sarana</li>
+              <li>Karakteristik Profil Murid & Rekomendasi 8 DPL</li>
+            </ul>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xs px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold transition cursor-pointer"
+          >
+            Tutup Sementara
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!recommendation) return null;
 
   const toggleField = (key: string) => {
     setSelectedFields((prev) => ({

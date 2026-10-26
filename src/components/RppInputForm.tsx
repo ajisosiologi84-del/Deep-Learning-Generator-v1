@@ -233,9 +233,9 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
   };
 
   // Trigger CP Analysis with live AI Gemini or instant pedagogical heuristic engine
-  const triggerCpAnalysis = async (explicitCp?: string, forceSource?: 'gemini' | 'heuristic') => {
+  const triggerCpAnalysis = async (explicitCp?: string, forceSource?: 'gemini' | 'heuristic', openModalOnComplete = false) => {
     const cpToUse = (explicitCp !== undefined ? explicitCp : inputState.capaianPembelajaran || '').trim();
-    if (!cpToUse || cpToUse.length < 15) return;
+    if (!cpToUse || cpToUse.length < 5) return;
 
     setIsAnalyzingCp(true);
     setAppliedNotice(null);
@@ -252,6 +252,9 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
       if (res.success && res.data) {
         setCpRecommendation(res.data);
         setCpRecommendationSource(res.source || 'gemini');
+        if (openModalOnComplete) {
+          setIsCpModalOpen(true);
+        }
       }
     } catch (err) {
       console.warn('Network recommendation error, fallback using pedagogicalEngine:', err);
@@ -265,6 +268,9 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
       });
       setCpRecommendation(localResult);
       setCpRecommendationSource('heuristic');
+      if (openModalOnComplete) {
+        setIsCpModalOpen(true);
+      }
     } finally {
       setIsAnalyzingCp(false);
     }
@@ -273,10 +279,10 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
   // Handle CP input changes with automatic debounce analysis
   const handleCpChange = (newVal: string) => {
     setInputState((prev) => ({ ...prev, capaianPembelajaran: newVal }));
-    if (autoAnalyzeEnabled && newVal.trim().length >= 25) {
+    if (autoAnalyzeEnabled && newVal.trim().length >= 15) {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
-        triggerCpAnalysis(newVal);
+        triggerCpAnalysis(newVal, undefined, false);
       }, 700);
     }
   };
@@ -292,7 +298,34 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
       capaianPembelajaran: example.rumusanCP,
     }));
     setShowBskapExamples(false);
-    triggerCpAnalysis(example.rumusanCP);
+    setAppliedNotice(`💡 Contoh resmi BSKAP ${example.mapel} (${example.jenjang}) dipilih. Memproses rekomendasi cerdas...`);
+    triggerCpAnalysis(example.rumusanCP, undefined, false);
+  };
+
+  // Handle manual click on "Analisis CP BSKAP" button
+  const handleManualAnalyzeClick = () => {
+    const cpText = (inputState.capaianPembelajaran || '').trim();
+    if (!cpText || cpText.length < 10) {
+      // Intelligently find matching official CP from BSKAP examples
+      const matched = BSKAP_CP_EXAMPLES.find((ex) =>
+        inputState.mapel ? ex.mapel.toLowerCase().includes(inputState.mapel.toLowerCase()) : false
+      ) || BSKAP_CP_EXAMPLES[0];
+
+      setInputState((prev) => ({
+        ...prev,
+        mapel: prev.mapel || matched.mapel,
+        kelas: prev.kelas || matched.fase,
+        topik: prev.topik || matched.topik,
+        elemenCP: prev.elemenCP || matched.elemenCP,
+        capaianPembelajaran: matched.rumusanCP,
+      }));
+      setAppliedNotice(`💡 Memuat rumusan CP BSKAP resmi (${matched.mapel} - ${matched.jenjang}) dan membuka rekomendasi.`);
+      setIsCpModalOpen(true);
+      triggerCpAnalysis(matched.rumusanCP, undefined, true);
+    } else {
+      setIsCpModalOpen(true);
+      triggerCpAnalysis(cpText, undefined, true);
+    }
   };
 
   // Apply all 4 pillars to the RPP input state at once
@@ -1968,6 +2001,7 @@ export const RppInputForm: React.FC<RppInputFormProps> = ({
         onApplyAll={handleApplyAllRecommendations}
         onApplySelected={handleApplySelectedRecommendations}
         source={cpRecommendationSource}
+        isLoading={isAnalyzingCp}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import { RPPData, RPPInputFormState } from '../types/rpp';
 import { PRESETS } from '../data/presets';
+import { analyzeCpAndGenerateRecommendation } from './pedagogicalEngine';
 
 export interface GenerateRPPResponse {
   success: boolean;
@@ -142,19 +143,23 @@ export interface RecommendCPParams {
   elemenCP?: string;
 }
 
-import { analyzeCpAndGenerateRecommendation } from './pedagogicalEngine';
-
 export async function getRecommendationsFromCP(params: RecommendCPParams): Promise<{
   success: boolean;
   data: any;
   source: 'gemini' | 'heuristic';
 }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
   try {
     const res = await fetch('/api/recommend-from-cp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -164,6 +169,7 @@ export async function getRecommendationsFromCP(params: RecommendCPParams): Promi
     const json = await res.json();
     return json;
   } catch (error: any) {
+    clearTimeout(timeoutId);
     console.warn('Network call to recommend-from-cp failed, generating client fallback using pedagogicalEngine:', error?.message);
     const result = analyzeCpAndGenerateRecommendation({
       capaianPembelajaran: params.capaianPembelajaran,
@@ -173,7 +179,6 @@ export async function getRecommendationsFromCP(params: RecommendCPParams): Promi
       topik: params.topik,
       elemenCP: params.elemenCP,
     });
-
     return {
       success: true,
       data: result,
